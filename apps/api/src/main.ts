@@ -37,11 +37,18 @@ async function bootstrap() {
   // Global Middlewares
   app.use(cookieParser());
   app.enableCors({
-    origin: [
-      process.env.FRONTEND_URL || 'http://localhost:3000',
-      'http://localhost:3000',
-      'https://localhost:3000',
-    ],
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      const frontendUrl = process.env.FRONTEND_URL;
+      if (
+        origin.includes('localhost') ||
+        origin.endsWith('.vercel.app') ||
+        (frontendUrl && origin === frontendUrl)
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     credentials: true,
   });
 
