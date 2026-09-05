@@ -5,7 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { TransformInterceptor } from './presentation/interceptors/transform.interceptor';
 import { LoggingInterceptor } from './presentation/interceptors/logging.interceptor';
 import { HttpExceptionFilter } from './presentation/filters/http-exception.filter';
-import * as cookieParser from 'cookie-parser';
+import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 
 async function bootstrap() {
