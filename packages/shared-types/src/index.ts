@@ -61,6 +61,7 @@ export interface TaskDto {
   isCompleted: boolean;
   completedAt?: string | null;
   tags: string[];
+  isMandatory?: boolean;
   subtasks: SubtaskDto[];
   createdAt: string;
   updatedAt: string;
@@ -110,17 +111,22 @@ export interface DailySummaryContext {
   date: string;
   completedTasksCount: number;
   totalSpentMins: number;
+  totalFocusMins: number;
+  mandatoryTasksCount?: number;
+  completedMandatoryCount?: number;
   completedTasks: Array<{
     id: string;
     title: string;
     spentMins: number;
     tags: string[];
+    isMandatory?: boolean;
   }>;
   inProgressTasks: Array<{
     id: string;
     title: string;
     estimatedMins: number;
     spentMins: number;
+    isMandatory?: boolean;
   }>;
   todayJournal?: string | null;
 }
@@ -133,6 +139,7 @@ export interface SuggestedTaskProposal {
   estimatedMins: number;
   suggestedColumn: string;
   subtasks?: string[];
+  isMandatory?: boolean;
   isApplied?: boolean;
 }
 

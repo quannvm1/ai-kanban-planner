@@ -14,6 +14,7 @@ export interface ApprovedTaskItem {
   estimatedMins?: number;
   columnId?: string;
   subtasks?: string[];
+  isMandatory?: boolean;
 }
 
 export interface ApplyDailyPlanInput {
@@ -68,7 +69,8 @@ export class ApplyDailyPlanUseCase {
         priority: item.priority || Priority.MEDIUM,
         orderIndex: i,
         estimatedMins: item.estimatedMins || 45,
-        tags: ['AI Plan'],
+        tags: item.isMandatory ? ['AI Plan', 'Daily Habit'] : ['AI Plan'],
+        isMandatory: item.isMandatory || false,
         subtasks: subtaskEntities,
       });
 

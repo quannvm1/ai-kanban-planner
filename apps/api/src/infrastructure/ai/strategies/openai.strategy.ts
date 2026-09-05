@@ -57,6 +57,7 @@ User Notes: "${context.todayJournal || ''}"`;
           estimatedMins: Number(t.estimatedMins) || 45,
           suggestedColumn: t.suggestedColumn || 'To Do',
           subtasks: t.subtasks || [],
+          isMandatory: Boolean(t.isMandatory),
           isApplied: false,
         })),
       };

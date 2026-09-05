@@ -17,6 +17,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
+    if (response.headersSent) {
+      return;
+    }
+
+    // If OAuth callback fails, redirect back to login page with error param
+    if (request.url.includes('/auth/google/callback')) {
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      return response.redirect(`${frontendUrl}/login?error=google_auth_failed`);
+    }
+
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message: any = 'Lỗi hệ thống không xác định';
     let error = 'Internal Server Error';

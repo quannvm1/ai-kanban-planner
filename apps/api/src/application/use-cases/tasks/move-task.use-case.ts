@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ITaskRepository, TASK_REPOSITORY } from '../../../domain/repositories/task.repository.interface';
 import { IBoardRepository, BOARD_REPOSITORY } from '../../../domain/repositories/board.repository.interface';
 import { IActivityLogRepository, ACTIVITY_LOG_REPOSITORY } from '../../../domain/repositories/activity-log.repository.interface';
@@ -25,9 +25,14 @@ export class MoveTaskUseCase {
       throw new NotFoundException('Task không tồn tại');
     }
 
+    const board = await this.boardRepo.findById(task.boardId);
+    if (!board || board.userId !== input.userId) {
+      throw new ForbiddenException('Bạn không có quyền di chuyển task này.');
+    }
+
     const targetCol = await this.boardRepo.findColumnById(input.targetColumnId);
-    if (!targetCol) {
-      throw new NotFoundException('Cột đích không tồn tại');
+    if (!targetCol || targetCol.boardId !== board.id) {
+      throw new BadRequestException('Cột đích không tồn tại hoặc không thuộc bảng công việc này.');
     }
 
     const oldColId = task.columnId;

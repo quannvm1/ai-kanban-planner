@@ -24,6 +24,7 @@ export class PrismaTaskRepository implements ITaskRepository {
       t.isCompleted,
       t.completedAt,
       t.tags || [],
+      t.isMandatory || false,
       (t.subtasks || []).map(
         (s: any) => new SubtaskEntity(s.id, s.taskId, s.title, s.isDone, s.orderIndex, s.createdAt, s.updatedAt),
       ),
@@ -107,6 +108,7 @@ export class PrismaTaskRepository implements ITaskRepository {
         spentMins: entity.spentMins,
         isCompleted: entity.isCompleted,
         tags: entity.tags,
+        isMandatory: entity.isMandatory,
         subtasks: {
           create: entity.subtasks.map((s) => ({
             id: s.id,
@@ -136,6 +138,7 @@ export class PrismaTaskRepository implements ITaskRepository {
         isCompleted: entity.isCompleted,
         completedAt: entity.completedAt,
         tags: entity.tags,
+        isMandatory: entity.isMandatory,
       },
       include: { subtasks: true },
     });

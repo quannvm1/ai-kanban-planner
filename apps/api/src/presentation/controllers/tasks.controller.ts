@@ -33,6 +33,7 @@ export class TasksController {
       dueDate?: string;
       estimatedMins?: number;
       tags?: string[];
+      isMandatory?: boolean;
       subtasks?: Array<{ title: string; orderIndex?: number }>;
     },
   ) {
@@ -44,6 +45,7 @@ export class TasksController {
 
   @Patch(':id')
   async updateTask(
+    @CurrentUser() user: UserEntity,
     @Param('id') id: string,
     @Body()
     body: {
@@ -53,10 +55,12 @@ export class TasksController {
       dueDate?: string | null;
       estimatedMins?: number;
       tags?: string[];
+      isMandatory?: boolean;
       subtasks?: Array<{ id?: string; title: string; isDone: boolean; orderIndex?: number }>;
     },
   ) {
     return this.updateTaskUseCase.execute({
+      userId: user.id,
       taskId: id,
       ...body,
     });
@@ -77,8 +81,8 @@ export class TasksController {
   }
 
   @Delete(':id')
-  async deleteTask(@Param('id') id: string) {
-    await this.deleteTaskUseCase.execute(id);
+  async deleteTask(@CurrentUser() user: UserEntity, @Param('id') id: string) {
+    await this.deleteTaskUseCase.execute(user.id, id);
     return { deleted: true };
   }
 

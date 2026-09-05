@@ -28,22 +28,30 @@ export class GetTodaySummaryUseCase {
     const journal = await this.dailyRepo.findJournalByDate(userId, targetDate);
 
     const totalSpentMins = completedTasks.reduce((acc, t) => acc + (t.spentMins || 0), 0) + totalFocusMins;
+    const allTodayTasks = [...completedTasks, ...inProgressTasks];
+    const mandatoryTasksCount = allTodayTasks.filter((t) => t.isMandatory).length;
+    const completedMandatoryCount = completedTasks.filter((t) => t.isMandatory).length;
 
     return {
       date: dateStr,
       completedTasksCount: completedTasks.length,
       totalSpentMins,
+      totalFocusMins,
+      mandatoryTasksCount,
+      completedMandatoryCount,
       completedTasks: completedTasks.map((t) => ({
         id: t.id,
         title: t.title,
         spentMins: t.spentMins || 0,
         tags: t.tags || [],
+        isMandatory: t.isMandatory,
       })),
       inProgressTasks: inProgressTasks.map((t) => ({
         id: t.id,
         title: t.title,
         estimatedMins: t.estimatedMins || 0,
         spentMins: t.spentMins || 0,
+        isMandatory: t.isMandatory,
       })),
       todayJournal: journal?.notes || null,
     };

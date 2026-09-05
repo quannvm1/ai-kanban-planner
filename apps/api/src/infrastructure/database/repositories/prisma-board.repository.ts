@@ -60,6 +60,7 @@ export class PrismaBoardRepository implements IBoardRepository {
             t.isCompleted,
             t.completedAt,
             t.tags,
+            t.isMandatory || false,
             t.subtasks.map(
               (s) => new SubtaskEntity(s.id, s.taskId, s.title, s.isDone, s.orderIndex, s.createdAt, s.updatedAt),
             ),

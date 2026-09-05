@@ -42,16 +42,17 @@ Each task in "suggestedTasks" MUST have:
 - "priority": "LOW" | "MEDIUM" | "HIGH" | "URGENT"
 - "estimatedMins": integer (typically 15 to 120 mins, total recommended tasks should sum to roughly 240-420 mins / 4-7 hours)
 - "suggestedColumn": "To Do"
+- "isMandatory": boolean (true for essential daily routines/habits, false for regular tasks)
 - "subtasks": array of short string checklist items (optional)`;
 
     const userPrompt = `DAILY ACTIVITY CONTEXT:
 Date: ${context.date}
 Total Pomodoro Focus Time: ${context.totalFocusMins} minutes
 Tasks Completed Today (${context.completedTasksCount}):
-${context.completedTasks.map((t) => `- ${t.title} (${t.spentMins}m spent, tags: ${t.tags.join(', ') || 'none'})`).join('\n') || 'None'}
+${context.completedTasks.map((t) => `- ${t.title} (${t.spentMins}m spent, tags: ${t.tags.join(', ') || 'none'}, mandatory: ${t.isMandatory ? 'YES' : 'NO'})`).join('\n') || 'None'}
 
 Tasks Currently In-Progress:
-${context.inProgressTasks.map((t) => `- ${t.title} (est: ${t.estimatedMins}m, spent: ${t.spentMins}m)`).join('\n') || 'None'}
+${context.inProgressTasks.map((t) => `- ${t.title} (est: ${t.estimatedMins}m, spent: ${t.spentMins}m, mandatory: ${t.isMandatory ? 'YES' : 'NO'})`).join('\n') || 'None'}
 
 User's Daily Journal / Reflection:
 "${context.todayJournal || 'No reflection entered today.'}"
@@ -76,6 +77,7 @@ Please generate the structured JSON plan now.`;
           estimatedMins: Number(t.estimatedMins) || 45,
           suggestedColumn: t.suggestedColumn || 'To Do',
           subtasks: t.subtasks || [],
+          isMandatory: Boolean(t.isMandatory),
           isApplied: false,
         })),
       };

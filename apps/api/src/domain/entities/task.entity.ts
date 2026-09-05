@@ -16,6 +16,7 @@ export class TaskEntity {
     public isCompleted: boolean = false,
     public completedAt: Date | null = null,
     public tags: string[] = [],
+    public isMandatory: boolean = false,
     public subtasks: SubtaskEntity[] = [],
     public readonly createdAt: Date = new Date(),
     public updatedAt: Date = new Date(),
@@ -32,6 +33,7 @@ export class TaskEntity {
     dueDate?: Date | null;
     estimatedMins?: number;
     tags?: string[];
+    isMandatory?: boolean;
     subtasks?: SubtaskEntity[];
   }): TaskEntity {
     return new TaskEntity(
@@ -48,6 +50,7 @@ export class TaskEntity {
       false,
       null,
       data.tags || [],
+      data.isMandatory || false,
       data.subtasks || [],
       new Date(),
       new Date(),

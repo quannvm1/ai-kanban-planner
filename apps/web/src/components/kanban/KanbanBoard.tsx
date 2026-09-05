@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -18,6 +18,7 @@ import { BoardDto, ColumnDto, TaskDto } from '@ai-kanban/shared-types';
 import { KanbanColumn } from './KanbanColumn';
 import { TaskCard } from './TaskCard';
 import { apiClient } from '@/lib/api-client';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface KanbanBoardProps {
   board: BoardDto;
@@ -25,6 +26,7 @@ interface KanbanBoardProps {
   onAddTask: (columnId: string) => void;
   onStartPomodoro?: (task: TaskDto) => void;
   onRefresh?: () => void;
+  layoutMode?: 'fit' | 'scroll';
 }
 
 export function KanbanBoard({
@@ -33,9 +35,11 @@ export function KanbanBoard({
   onAddTask,
   onStartPomodoro,
   onRefresh,
+  layoutMode = 'fit',
 }: KanbanBoardProps) {
   const [columns, setColumns] = useState<ColumnDto[]>(board.columns || []);
   const [activeTask, setActiveTask] = useState<TaskDto | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setColumns(board.columns || []);
@@ -139,6 +143,18 @@ export function KanbanBoard({
     }
   };
 
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: -320, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: 320, behavior: 'smooth' });
+    }
+  };
+
   return (
     <DndContext
       sensors={sensors}
@@ -147,22 +163,53 @@ export function KanbanBoard({
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-4 overflow-x-auto pb-6 pt-2 h-full scroll-smooth">
-        {columns.map((col) => (
-          <KanbanColumn
-            key={col.id}
-            column={col}
-            tasks={col.tasks || []}
-            onAddTask={onAddTask}
-            onTaskClick={onTaskClick}
-            onStartPomodoro={onStartPomodoro}
-          />
-        ))}
+      <div className="relative h-full flex flex-col group/board">
+        {/* Columns Grid / Flex Container */}
+        <div
+          ref={scrollContainerRef}
+          className={`h-full pb-2 scroll-smooth custom-scrollbar ${
+            layoutMode === 'fit'
+              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3.5 overflow-y-auto lg:overflow-y-hidden lg:overflow-x-hidden'
+              : 'flex gap-4 overflow-x-auto'
+          }`}
+        >
+          {columns.map((col) => (
+            <KanbanColumn
+              key={col.id}
+              column={col}
+              tasks={col.tasks || []}
+              onAddTask={onAddTask}
+              onTaskClick={onTaskClick}
+              onStartPomodoro={onStartPomodoro}
+              layoutMode={layoutMode}
+            />
+          ))}
+        </div>
+
+        {/* Scroll Left/Right floating controls for scroll mode */}
+        {layoutMode === 'scroll' && (
+          <>
+            <button
+              onClick={scrollLeft}
+              className="absolute left-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/95 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 hover:text-white hover:bg-indigo-600 shadow-xl flex items-center justify-center opacity-0 group-hover/board:opacity-90 transition-all z-20"
+              title="Cuộn sang trái"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={scrollRight}
+              className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/95 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 hover:text-white hover:bg-indigo-600 shadow-xl flex items-center justify-center opacity-0 group-hover/board:opacity-90 transition-all z-20"
+              title="Cuộn sang phải"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </>
+        )}
       </div>
 
-      <DragOverlay>
+      <DragOverlay dropAnimation={{ duration: 200, easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)' }}>
         {activeTask ? (
-          <div className="rotate-2 scale-105 shadow-2xl">
+          <div className="rotate-2 scale-105 shadow-2xl shadow-indigo-500/20 ring-2 ring-indigo-500 rounded-xl cursor-grabbing">
             <TaskCard task={activeTask} onClick={() => {}} />
           </div>
         ) : null}

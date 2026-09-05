@@ -1,5 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ITaskRepository, TASK_REPOSITORY } from '../../../domain/repositories/task.repository.interface';
+import { IBoardRepository, BOARD_REPOSITORY } from '../../../domain/repositories/board.repository.interface';
 import { IActivityLogRepository, ACTIVITY_LOG_REPOSITORY } from '../../../domain/repositories/activity-log.repository.interface';
 import { TaskEntity } from '../../../domain/entities/task.entity';
 import { SubtaskEntity } from '../../../domain/entities/subtask.entity';
@@ -17,6 +18,7 @@ export interface CreateTaskInput {
   dueDate?: string;
   estimatedMins?: number;
   tags?: string[];
+  isMandatory?: boolean;
   subtasks?: Array<{ title: string; orderIndex?: number }>;
 }
 
@@ -24,10 +26,21 @@ export interface CreateTaskInput {
 export class CreateTaskUseCase {
   constructor(
     @Inject(TASK_REPOSITORY) private taskRepo: ITaskRepository,
+    @Inject(BOARD_REPOSITORY) private boardRepo: IBoardRepository,
     @Inject(ACTIVITY_LOG_REPOSITORY) private activityRepo: IActivityLogRepository,
   ) {}
 
   async execute(input: CreateTaskInput) {
+    const board = await this.boardRepo.findById(input.boardId);
+    if (!board || board.userId !== input.userId) {
+      throw new ForbiddenException('Bảng công việc không tồn tại hoặc bạn không có quyền truy cập.');
+    }
+
+    const column = await this.boardRepo.findColumnById(input.columnId);
+    if (!column || column.boardId !== board.id) {
+      throw new BadRequestException('Cột không tồn tại trên bảng công việc này.');
+    }
+
     const subtaskEntities = (input.subtasks || []).map((s, idx) =>
       SubtaskEntity.create({
         taskId: '',
@@ -46,6 +59,7 @@ export class CreateTaskUseCase {
       dueDate: input.dueDate ? new Date(input.dueDate) : null,
       estimatedMins: input.estimatedMins || 0,
       tags: input.tags || [],
+      isMandatory: input.isMandatory || false,
       subtasks: subtaskEntities,
     });
 

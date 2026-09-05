@@ -108,6 +108,7 @@ model Task {
   isCompleted      Boolean           @default(false)
   completedAt      DateTime?
   tags             String[]          @default([])
+  isMandatory      Boolean           @default(false)
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
@@ -186,6 +187,7 @@ model SuggestedTask {
   priority        Priority     @default(MEDIUM)
   estimatedMins   Int?
   suggestedColumn String       @default("To Do")
+  isMandatory     Boolean      @default(false)
   isApplied       Boolean      @default(false)
   createdTaskId   String?
 
