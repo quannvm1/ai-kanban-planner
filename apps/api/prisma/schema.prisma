@@ -1,0 +1,208 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum AIProviderType {
+  GEMINI
+  OPENAI
+  CLAUDE
+  DEEPSEEK
+}
+
+model User {
+  id               String            @id @default(uuid())
+  email            String            @unique
+  name             String?
+  avatarUrl        String?
+  googleId         String?           @unique
+  role             Role              @default(USER)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  boards           Board[]
+  apiKeys          UserApiKey[]
+  activityLogs     ActivityLog[]
+  dailyJournals    DailyJournal[]
+  pomodoroSessions PomodoroSession[]
+
+  @@map("users")
+}
+
+model UserApiKey {
+  id           String         @id @default(uuid())
+  userId       String
+  provider     AIProviderType
+  encryptedKey String
+  iv           String
+  authTag      String
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@map("user_api_keys")
+}
+
+model Board {
+  id          String     @id @default(uuid())
+  title       String
+  description String?
+  userId      String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  columns     Column[]
+  tasks       Task[]
+
+  @@map("boards")
+}
+
+model Column {
+  id         String   @id @default(uuid())
+  boardId    String
+  title      String
+  orderIndex Int
+  wipLimit   Int?
+  colorHex   String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  board      Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  tasks      Task[]
+
+  @@map("columns")
+}
+
+model Task {
+  id               String            @id @default(uuid())
+  boardId          String
+  columnId         String
+  title            String
+  description      String?
+  priority         Priority          @default(MEDIUM)
+  orderIndex       Int
+  dueDate          DateTime?
+  estimatedMins    Int?              @default(0)
+  spentMins        Int?              @default(0)
+  isCompleted      Boolean           @default(false)
+  completedAt      DateTime?
+  tags             String[]          @default([])
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  board            Board             @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  column           Column            @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  subtasks         Subtask[]
+  activityLogs     ActivityLog[]
+  pomodoroSessions PomodoroSession[]
+
+  @@map("tasks")
+}
+
+model Subtask {
+  id         String   @id @default(uuid())
+  taskId     String
+  title      String
+  isDone     Boolean  @default(false)
+  orderIndex Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("subtasks")
+}
+
+model ActivityLog {
+  id         String   @id @default(uuid())
+  userId     String
+  taskId     String?
+  action     String
+  details    Json?
+  recordedAt DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task       Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([userId, recordedAt])
+  @@map("activity_logs")
+}
+
+model DailyJournal {
+  id          String        @id @default(uuid())
+  userId      String
+  date        DateTime      @db.Date
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dailyAIPlan DailyAIPlan?
+
+  @@unique([userId, date])
+  @@map("daily_journals")
+}
+
+model DailyAIPlan {
+  id              String          @id @default(uuid())
+  dailyJournalId  String          @unique
+  providerUsed    AIProviderType
+  summaryInsights String
+  rawResponse     Json
+  createdAt       DateTime        @default(now())
+
+  dailyJournal    DailyJournal    @relation(fields: [dailyJournalId], references: [id], onDelete: Cascade)
+  suggestedTasks  SuggestedTask[]
+
+  @@map("daily_ai_plans")
+}
+
+model SuggestedTask {
+  id              String       @id @default(uuid())
+  dailyAIPlanId   String
+  title           String
+  description     String?
+  priority        Priority     @default(MEDIUM)
+  estimatedMins   Int?
+  suggestedColumn String       @default("To Do")
+  isApplied       Boolean      @default(false)
+  createdTaskId   String?
+
+  dailyAIPlan     DailyAIPlan  @relation(fields: [dailyAIPlanId], references: [id], onDelete: Cascade)
+
+  @@map("suggested_tasks")
+}
+
+model PomodoroSession {
+  id           String   @id @default(uuid())
+  userId       String
+  taskId       String?
+  durationMins Int      @default(25)
+  completedAt  DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task         Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@map("pomodoro_sessions")
+}
