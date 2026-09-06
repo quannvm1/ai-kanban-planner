@@ -38,7 +38,7 @@ jobs:
   deploy-frontend:
     name: Deploy Next.js to Vercel
     needs: lint-and-test
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && secrets.VERCEL_TOKEN != ''
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
