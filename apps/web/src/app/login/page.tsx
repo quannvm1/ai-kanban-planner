@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
+import { getApiBaseUrl } from '@/lib/api-client';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { Sparkles, Shield, AlertCircle, ArrowRight, Zap, Code2, CheckCircle2 } from 'lucide-react';
 
@@ -25,7 +26,7 @@ function LoginPageContent() {
   }, [searchParams]);
 
   const handleGoogleLogin = () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+    const apiUrl = getApiBaseUrl();
     window.location.href = `${apiUrl}/auth/google`;
   };
 
