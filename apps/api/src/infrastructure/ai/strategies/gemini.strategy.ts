@@ -12,25 +12,27 @@ export class GeminiStrategy implements IAILLMStrategy {
   }
 
   async testConnection(apiKey: string): Promise<boolean> {
-    try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-3.7-flash' });
-      const result = await model.generateContent('ping');
-      return !!result.response.text();
-    } catch (error) {
-      this.logger.error('Gemini test connection failed', error);
-      return false;
+    const candidateModels = ['gemini-3.1-flash-lite', 'gemini-3.7-flash', 'gemini-3.5-flash'];
+    const genAI = new GoogleGenerativeAI(apiKey);
+    for (const modelName of candidateModels) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent('ping');
+        if (result.response.text()) return true;
+      } catch (error) {
+        this.logger.warn(`Gemini test connection failed for ${modelName}`, error);
+      }
     }
+    return false;
   }
 
   async generateDailyPlan(context: DailySummaryContext, apiKey: string): Promise<DailyPlanProposal> {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-3.7-flash',
-      generationConfig: {
-        responseMimeType: 'application/json',
-      },
-    });
+    const candidateModels = [
+      'gemini-3.7-flash',
+      'gemini-3.1-flash-lite',
+      'gemini-3.5-flash',
+    ];
 
     const systemPrompt = `You are an elite agile productivity coach. Analyze the user's daily performance, focus time, completed tasks, in-progress tasks, and their daily journal notes.
 Output a JSON response with:
@@ -59,31 +61,53 @@ User's Daily Journal / Reflection:
 
 Please generate the structured JSON plan now.`;
 
-    try {
-      const result = await model.generateContent([
-        { text: systemPrompt },
-        { text: userPrompt },
-      ]);
-      const rawText = result.response.text();
-      const parsed = JSON.parse(rawText);
+    let lastError: any = null;
 
-      return {
-        providerUsed: AIProviderType.GEMINI,
-        summaryInsights: parsed.summaryInsights || 'Kế hoạch đã được tạo thành công.',
-        suggestedTasks: (parsed.suggestedTasks || []).map((t: any) => ({
-          title: t.title || 'Task mới',
-          description: t.description || null,
-          priority: (t.priority?.toUpperCase() as Priority) || Priority.MEDIUM,
-          estimatedMins: Number(t.estimatedMins) || 45,
-          suggestedColumn: t.suggestedColumn || 'To Do',
-          subtasks: t.subtasks || [],
-          isMandatory: Boolean(t.isMandatory),
-          isApplied: false,
-        })),
-      };
-    } catch (error) {
-      this.logger.error('Error in GeminiStrategy generateDailyPlan', error);
-      throw new Error(`Failed to generate daily plan with Gemini: ${error.message}`);
+    for (const modelName of candidateModels) {
+      try {
+        this.logger.log(`Attempting Gemini plan generation with model: ${modelName}`);
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          generationConfig: {
+            responseMimeType: 'application/json',
+          },
+        });
+
+        const result = await model.generateContent([
+          { text: systemPrompt },
+          { text: userPrompt },
+        ]);
+
+        let rawText = result.response.text();
+        if (rawText.startsWith('```json')) {
+          rawText = rawText.replace(/^```json\s*/i, '').replace(/```\s*$/i, '');
+        } else if (rawText.startsWith('```')) {
+          rawText = rawText.replace(/^```\s*/i, '').replace(/```\s*$/i, '');
+        }
+
+        const parsed = JSON.parse(rawText.trim());
+
+        return {
+          providerUsed: AIProviderType.GEMINI,
+          summaryInsights: parsed.summaryInsights || 'Kế hoạch đã được tạo thành công.',
+          suggestedTasks: (parsed.suggestedTasks || []).map((t: any) => ({
+            title: t.title || 'Task mới',
+            description: t.description || null,
+            priority: (t.priority?.toUpperCase() as Priority) || Priority.MEDIUM,
+            estimatedMins: Number(t.estimatedMins) || 45,
+            suggestedColumn: t.suggestedColumn || 'To Do',
+            subtasks: t.subtasks || [],
+            isMandatory: Boolean(t.isMandatory),
+            isApplied: false,
+          })),
+        };
+      } catch (error: any) {
+        this.logger.warn(`Model ${modelName} failed (${error.message}). Trying fallback if available...`);
+        lastError = error;
+      }
     }
+
+    this.logger.error('All Gemini candidate models failed', lastError);
+    throw new Error(`Failed to generate daily plan with Gemini: ${lastError?.message || 'Service Unavailable'}`);
   }
 }
