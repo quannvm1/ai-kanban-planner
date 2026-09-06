@@ -37,11 +37,12 @@ export class AuthController {
     }
   }
 
-  // Direct mock/dev login for testing without Google Credentials (Disabled in Production)
+  // Direct mock/dev login for testing without Google Credentials
   @Post('dev-login')
   async devLogin(@Body() body: { email?: string; name?: string }) {
-    if (this.configService.get<string>('NODE_ENV') === 'production') {
-      throw new ForbiddenException('Dev login không khả dụng trên môi trường Production.');
+    const enableDevLogin = this.configService.get<string>('ENABLE_DEV_LOGIN', 'true');
+    if (enableDevLogin === 'false') {
+      throw new ForbiddenException('Tính năng Dev login đã bị vô hiệu hóa.');
     }
     const email = body.email || 'developer@example.com';
     const name = body.name || 'Pro Developer';
