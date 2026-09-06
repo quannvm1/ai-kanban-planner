@@ -1,8 +1,14 @@
 import axios from 'axios';
 
 export function getApiBaseUrl(): string {
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL;
+  let url = process.env.NEXT_PUBLIC_API_URL;
+  if (url) {
+    if (url.includes('ai-kanban-api.onrender.com')) {
+      url = url.replace('ai-kanban-api.onrender.com', 'ai-kanban-planner.onrender.com');
+    }
+    if (!url.includes('localhost')) {
+      return url;
+    }
   }
   if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
     return 'https://ai-kanban-planner.onrender.com/api/v1';
