@@ -14,7 +14,7 @@ export class GeminiStrategy implements IAILLMStrategy {
   async testConnection(apiKey: string): Promise<boolean> {
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-3.7-flash' });
       const result = await model.generateContent('ping');
       return !!result.response.text();
     } catch (error) {
@@ -26,7 +26,7 @@ export class GeminiStrategy implements IAILLMStrategy {
   async generateDailyPlan(context: DailySummaryContext, apiKey: string): Promise<DailyPlanProposal> {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-3.7-flash',
       generationConfig: {
         responseMimeType: 'application/json',
       },
